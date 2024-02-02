@@ -215,7 +215,7 @@ static OSThread *powerFSMthread;
 static OSThread *buttonThread;
 uint32_t ButtonThread::longPressTime = 0;
 #endif
-static OSThread *accelerometerThread;
+static AccelerometerThread *accelerometerThread;
 static OSThread *ambientLightingThread;
 SPISettings spiSettings(4000000, MSBFIRST, SPI_MODE0);
 
@@ -922,6 +922,7 @@ void loop()
         lastPrint = millis();
         meshtastic::printThreadInfo("main");
     }
+
 #endif
 
     // TODO: This should go into a thread handled by FreeRTOS.

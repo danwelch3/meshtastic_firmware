@@ -39,6 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mesh/generated/meshtastic/deviceonly.pb.h"
 #include "meshUtils.h"
 #include "modules/ExternalNotificationModule.h"
+#include "modules/MotionModule.h"
 #include "modules/TextMessageModule.h"
 #include "sleep.h"
 #include "target_specific.h"
@@ -103,6 +104,8 @@ static bool heartbeat = false;
 #endif
 
 static uint16_t displayWidth, displayHeight;
+
+static uint32_t lastCompassTransition;
 
 #define SCREEN_WIDTH displayWidth
 #define SCREEN_HEIGHT displayHeight
@@ -859,9 +862,15 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
     }
     bool hasNodeHeading = false;
 
-    if (ourNode && hasValidPosition(ourNode)) {
+    if (ourNode && (hasValidPosition(ourNode) || motionModule->hasCompass)) {
         const meshtastic_PositionLite &op = ourNode->position;
-        float myHeading = estimatedHeading(DegD(op.latitude_i), DegD(op.longitude_i));
+
+        float myHeading = 0.0;
+        if (motionModule->hasCompass) {
+            myHeading = motionModule->getHeading() * PI / 180.0f;
+        } else {
+            myHeading = estimatedHeading(DegD(op.latitude_i), DegD(op.longitude_i));
+        }
         drawCompassNorth(display, compassX, compassY, myHeading);
 
         if (hasValidPosition(node)) {
@@ -887,7 +896,7 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
                 GeoCoord::bearing(DegD(op.latitude_i), DegD(op.longitude_i), DegD(p.latitude_i), DegD(p.longitude_i));
             // If the top of the compass is a static north then bearingToOther can be drawn on the compass directly
             // If the top of the compass is not a static north we need adjust bearingToOther based on heading
-            if (!config.display.compass_north_top)
+            if (!config.display.compass_north_top || motionModule->hasCompass)
                 bearingToOther -= myHeading;
             drawNodeHeading(display, compassX, compassY, bearingToOther);
         }
@@ -906,6 +915,60 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
     }
     // Must be after distStr is populated
     drawColumns(display, x, y, fields);
+}
+
+static uint32_t lastCompassUpdate = 0;
+static uint32_t currentCompassTime = 0;
+
+static void drawCompassFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+{
+    display->setFont(FONT_SMALL);
+
+    // The coordinates define the left starting point of the text
+    display->setTextAlignment(TEXT_ALIGN_LEFT);
+
+    if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
+        display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_SMALL);
+    }
+
+    currentCompassTime = millis();
+    if (currentCompassTime < lastCompassUpdate || currentCompassTime - lastCompassUpdate > 500) {
+        lastCompassUpdate = millis();
+        motionModule->updateData();
+    }
+
+    static char magHeadingStr[16];
+    snprintf(magHeadingStr, sizeof(magHeadingStr), "Heading: %.1f", motionModule->heading);
+
+    meshtastic_NodeInfoLite *ourNode = nodeDB.getMeshNode(nodeDB.getNodeNum());
+    const char *fields[] = {magHeadingStr, NULL, NULL, NULL, NULL};
+    int16_t compassX = 0, compassY = 0;
+
+    // coordinates for the center of the compass/circle
+    if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_DEFAULT) {
+        compassX = x + SCREEN_WIDTH - getCompassDiam(display) / 2 - 5;
+        compassY = y + SCREEN_HEIGHT / 2;
+    } else {
+        compassX = x + SCREEN_WIDTH - getCompassDiam(display) / 2 - 5;
+        compassY = y + FONT_HEIGHT_SMALL + (SCREEN_HEIGHT - FONT_HEIGHT_SMALL) / 2;
+    }
+
+    drawCompassNorth(display, compassX, compassY, motionModule->heading * PI / 180.0f);
+    drawNodeHeading(display, compassX, compassY, motionModule->heading * PI / 180.0f * -1.0f);
+    display->drawCircle(compassX, compassY, getCompassDiam(display) / 2);
+
+    if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
+        display->setColor(BLACK);
+    }
+    // Must be after distStr is populated
+    drawColumns(display, x, y, fields);
+
+    // #ifdef USE_EINK
+    //     if (millis() - lastCompassTransition > 2000) {
+    //         screen->forceDisplay();
+    //         lastCompassTransition = millis();
+    //     }
+    // #endif
 }
 
 Screen::Screen(ScanI2C::DeviceAddress address, meshtastic_Config_DisplayConfig_OledType screenType, OLEDDISPLAY_GEOMETRY geometry)
@@ -1039,6 +1102,11 @@ void Screen::setup()
     touchScreenImpl1 = new TouchScreenImpl1(dispdev.getWidth(), dispdev.getHeight(), dispdev.getTouch);
     touchScreenImpl1->init();
 #endif
+
+    // // Initialize MotionModule to use magnetometer for heading
+    // motionModule.init();
+    motionModule = new MotionModule();
+    motionModule->init();
 
     // Subscribe to status updates
     powerStatusObserver.observe(&powerStatus->onNewStatus);
@@ -1194,6 +1262,8 @@ int32_t Screen::runOnce()
     // as fast as we really need so that any rounding errors still result with
     // the correct framerate
     return (1000 / targetFramerate);
+
+    lastCompassTransition = millis();
 }
 
 void Screen::drawDebugInfoTrampoline(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
@@ -1256,6 +1326,9 @@ void Screen::setFrames()
         numMeshNodes--;
 
     size_t numframes = 0;
+
+    // draw a compass and use calculated heading
+    normalFrames[numframes++] = drawCompassFrame;
 
     // put all of the module frames first.
     // this is a little bit of a dirty hack; since we're going to call

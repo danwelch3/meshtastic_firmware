@@ -53,7 +53,6 @@ class ButtonThread : public concurrency::OSThread
         if (settingsMap.count(user) != 0 && settingsMap[user] != RADIOLIB_NC)
             userButton = OneButton(settingsMap[user], true, true);
 #elif defined(BUTTON_PIN)
-
         userButton = OneButton(config.device.button_gpio ? config.device.button_gpio : BUTTON_PIN, true, true);
 #endif
 #ifdef INPUT_PULLUP_SENSE
@@ -190,16 +189,22 @@ class ButtonThread : public concurrency::OSThread
 
     static void userButtonMultiPressed()
     {
-        if (!config.device.disable_triple_click && (gps != nullptr)) {
-            config.position.gps_enabled = !(config.position.gps_enabled);
-            if (config.position.gps_enabled) {
-                LOG_DEBUG("Flag set to true to restore power\n");
-                gps->enable();
+        // int n = userButton.getNumberClicks();
+        int n = 3;
+        if (n == 3) {
+            if (!config.device.disable_triple_click && (gps != nullptr)) {
+                config.position.gps_enabled = !(config.position.gps_enabled);
+                if (config.position.gps_enabled) {
+                    LOG_DEBUG("Flag set to true to restore power\n");
+                    gps->enable();
 
-            } else {
-                LOG_DEBUG("Flag set to false for gps power\n");
-                gps->disable();
+                } else {
+                    LOG_DEBUG("Flag set to false for gps power\n");
+                    gps->disable();
+                }
             }
+        } else if (n == 5) {
+            LOG_DEBUG("5 button clicks... do calibration");
         }
     }
 
