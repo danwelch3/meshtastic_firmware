@@ -31,3 +31,5 @@ venv/
 release/
 .vscode/extensions.json
 /compile_commands.json
+
+platformio.ini
