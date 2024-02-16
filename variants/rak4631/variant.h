@@ -59,7 +59,9 @@ extern "C" {
  * Buttons
  */
 
-#define PIN_BUTTON1 9 // Pin for button on E-ink button module or IO expansion
+// #define PIN_BUTTON1 9 // Pin for button on E-ink button module or IO expansion IO5
+// #define PIN_BUTTON1 17 // IO1
+#define PIN_BUTTON1 31 // AIN1
 #define BUTTON_NEED_PULLUP
 #define PIN_BUTTON2 12
 #define PIN_BUTTON3 24
@@ -173,7 +175,7 @@ static const uint8_t SCK = PIN_SPI_SCK;
    IO7       <->  P0.28 (Arduino GPIO number 28)
    SW1       <->  P0.01 (Arduino GPIO number 1)
    A0        <->  P0.04/AIN2 (Arduino Analog A2
-   A1        <->  P0.31/AIN7 (Arduino Analog A7
+   A1        <->  P0.31/AIN7 (Arduino Analog A7  **button?
    SPI_CS    <->  P0.26 (Arduino GPIO number 26)
  */
 
@@ -199,6 +201,9 @@ control of the antenna switch
 
 SO GPIO 39/TXEN MAY NOT BE DEFINED FOR SUCCESSFUL OPERATION OF THE SX1262 - TG
 
+RAK12500 GPS I2C Address = 0x69
+RAK1921 OLED I2C Address = 0x3c
+RAK11300 I2C Address = 0x42
 */
 
 #define DETECTION_SENSOR_EN 4
@@ -229,7 +234,8 @@ SO GPIO 39/TXEN MAY NOT BE DEFINED FOR SUCCESSFUL OPERATION OF THE SX1262 - TG
 // Power is on the controllable 3V3_S rail
 // #define PIN_GPS_RESET (34)
 // #define PIN_GPS_EN PIN_3V3_EN
-#define PIN_GPS_PPS (17) // Pulse per second input from the GPS
+#define PIN_GPS_PPS (17) // Pulse per second input from the GPS in slot A
+// #define PIN_GPS_PPS (9) // Pulse per second input from the GPS in slot D
 
 #define GPS_RX_PIN PIN_SERIAL1_RX
 #define GPS_TX_PIN PIN_SERIAL1_TX
