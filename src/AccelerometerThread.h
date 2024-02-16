@@ -21,6 +21,7 @@
 #define ACCELEROMETER_CHECK_INTERVAL_MS 100
 #define ACCELEROMETER_CLICK_THRESHOLD 40
 
+
 uint16_t readRegister(uint8_t address, uint8_t reg, uint8_t *data, uint16_t len)
 {
     Wire.beginTransmission(address);
@@ -61,7 +62,7 @@ class AccelerometerThread : public concurrency::OSThread
             return;
         }
 
-        acceleremoter_type = type;
+        ScanI2C::DeviceType acceleremoter_type = type;
         LOG_DEBUG("AccelerometerThread initializing\n");
 
         if (acceleremoter_type == ScanI2C::DeviceType::MPU6050 && mpu.begin(accelerometer_found.address)) {
@@ -148,7 +149,7 @@ class AccelerometerThread : public concurrency::OSThread
         }
     }
   protected:
-    int32_t AccelerometerThread::runOnce()
+    int32_t runOnce()
     {
         canSleep = true; // Assume we should not keep the board awake
 
@@ -175,7 +176,7 @@ class AccelerometerThread : public concurrency::OSThread
     }
 
   private:
-    void AccelerometerThread::wakeScreen()
+    void wakeScreen()
     {
         if (powerFSM.getState() == &stateDARK) {
             LOG_INFO("Tap or motion detected. Turning on screen\n");
@@ -183,7 +184,7 @@ class AccelerometerThread : public concurrency::OSThread
         }
     }
 
-    void AccelerometerThread::buttonPress()
+    void buttonPress()
     {
         LOG_DEBUG("Double-tap detected. Firing button press\n");
         powerFSM.trigger(EVENT_PRESS);
