@@ -1003,7 +1003,16 @@ class MPU9250
     int16_t gx, gy, gz;
     int16_t mx, my, mz;
 
+    // // grey
+    float mx_centre = 56.0;
+    float my_centre = 45.0;
+    float mz_centre = 1.0;
+
   private:
+    // float mx_centre;
+    // float my_centre;
+    // float mz_centre;
+
     uint8_t devAddr;
     uint8_t buffer[14];
     uint8_t buffer_m[6];
@@ -1014,15 +1023,6 @@ class MPU9250
 
     uint8_t m_sense[3];
     float m_asa[3];
-
-    // float mx_centre;
-    // float my_centre;
-    // float mz_centre;
-
-    // // grey
-    float mx_centre = 43.0;
-    float my_centre = 48.0;
-    float mz_centre = -21.0;
 
     volatile int mx_max = 0;
     volatile int my_max = 0;

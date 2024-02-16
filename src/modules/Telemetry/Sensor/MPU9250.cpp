@@ -2181,7 +2181,7 @@ void MPU9250::update()
 
 float MPU9250::getHeading()
 {
-    float heading = 180 * atan2(Mxyz[1], Mxyz[0]) / PI;
+    float heading = 180 * atan2(Mxyz[1], Mxyz[0]) / PI + 180;
     if (heading < 0)
         heading += 360;
 

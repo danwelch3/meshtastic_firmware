@@ -279,6 +279,48 @@ void ScanI2CTwoWire::scanPort(I2CPort port)
                 SCAN_SIMPLE_CASE(SHT31_ADDR, SHT31, "SHT31 sensor found\n")
                 SCAN_SIMPLE_CASE(SHTC3_ADDR, SHTC3, "SHTC3 sensor found\n")
 
+            case BMX160_ADDR:
+                registerValue = getRegisterValue(ScanI2CTwoWire::RegisterLocation(addr, 0x00), 1);
+                if (registerValue == 0xD8) {
+                    type = BMX160;
+                    LOG_INFO("BMX160 sensor found at address 0x%x\n", (uint8_t)addr.address);
+                    break;
+                } else if (registerValue == 0xEA) {
+                    type = ICM20948;
+                    LOG_INFO("ICM20948 sensor found at address 0x%x\n", (uint8_t)addr.address);
+                    break;
+                }
+                registerValue = getRegisterValue(ScanI2CTwoWire::RegisterLocation(addr, 0x75), 1);
+                 if (registerValue == 0x71) {
+                    type = MPU9250;
+                    LOG_INFO("MPU9250 sensor found at address 0x%x\n", (uint8_t)addr.address);
+                    break;
+                }
+
+            case BMX160_ADDR_ALTERNATE:
+                registerValue = getRegisterValue(ScanI2CTwoWire::RegisterLocation(addr, 0x00), 1);
+                if (registerValue == 0xD8) {
+                    type = BMX160;
+                    LOG_INFO("BMX160 sensor found at address 0x%x\n", (uint8_t)addr.address);
+                    break;
+                } else if (registerValue == 0xEA) {
+                    type = ICM20948;
+                    LOG_INFO("ICM20948 sensor found at address 0x%x\n", (uint8_t)addr.address);
+                    break;
+                }
+                registerValue = getRegisterValue(ScanI2CTwoWire::RegisterLocation(addr, 0x75), 1);
+                 if (registerValue == 0x71) {
+                    type = MPU9250;
+                    LOG_INFO("MPU9250 sensor found at address 0x%x\n", (uint8_t)addr.address);
+                    break;
+                }
+                registerValue = getRegisterValue(ScanI2CTwoWire::RegisterLocation(addr, 0x68), 1);
+                 if (registerValue == 0x68) {
+                    type = MPU6050;
+                    LOG_INFO("MPU6050 accelerometer found\n", (uint8_t)addr.address);
+                    break;
+                }
+
             case LPS22HB_ADDR_ALT:
                 SCAN_SIMPLE_CASE(LPS22HB_ADDR, LPS22HB, "LPS22HB sensor found\n")
 
@@ -287,9 +329,9 @@ void ScanI2CTwoWire::scanPort(I2CPort port)
                 SCAN_SIMPLE_CASE(QMC5883L_ADDR, QMC5883L, "QMC5883L Highrate 3-Axis magnetic sensor found\n")
 
                 SCAN_SIMPLE_CASE(PMSA0031_ADDR, PMSA0031, "PMSA0031 air quality sensor found\n")
-                SCAN_SIMPLE_CASE(MPU6050_ADDR, MPU6050, "MPU6050 accelerometer found\n");
+                // SCAN_SIMPLE_CASE(MPU6050_ADDR, MPU6050, "MPU6050 accelerometer found\n");
                 SCAN_SIMPLE_CASE(BMA423_ADDR, BMA423, "BMA423 accelerometer found\n");
-
+            
             default:
                 LOG_INFO("Device found at address 0x%x was not able to be enumerated\n", addr.address);
             }
