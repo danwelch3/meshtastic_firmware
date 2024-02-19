@@ -113,6 +113,15 @@ float MotionModule::getHeading()
     return 0.0;
 }
 
+void MotionModule::calibrate()
+{
+    if (accelerometer_type == ScanI2C::DeviceType::BMX160) {
+        bmx160.calibrateMag();
+    } else if (accelerometer_type == ScanI2C::DeviceType::MPU9250) {
+        mpu9250.calibrateMag();
+    }
+}
+
 // float MotionModule::getPitch() {
 //     if (accelerometer_type == ScanI2C::DeviceType::BMX160) {
 //         // TO Do

@@ -26,6 +26,8 @@ void wakeOnIrq(int irq, int mode)
         FALLING);
 }
 
+static OneButton *pBtn;
+
 class ButtonThread : public concurrency::OSThread
 {
 // Prepare for button presses
@@ -203,8 +205,7 @@ class ButtonThread : public concurrency::OSThread
 
     static void userButtonMultiPressed()
     {
-        // int n = userButton.getNumberClicks();
-        int n = 3;
+        int n = pBtn->getNumberClicks();
         if (n == 3) {
             if (!config.device.disable_triple_click && (gps != nullptr)) {
                 gps->toggleGpsMode();
@@ -223,6 +224,7 @@ class ButtonThread : public concurrency::OSThread
             }
         } else if (n == 5) {
             LOG_DEBUG("5 button clicks... do calibration");
+            screen->startMotionCalibrationScreen();
         }
     }
 

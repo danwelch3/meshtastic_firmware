@@ -23,6 +23,8 @@ class Screen
     void forceDisplay() {}
     void startBluetoothPinScreen(uint32_t pin) {}
     void stopBluetoothPinScreen() {}
+    void startMotionCalibrationScreen() {}
+    void stopMotionCalibrationScreen() {}
     void startRebootScreen() {}
     void startShutdownScreen() {}
     void startFirmwareUpdateScreen() {}
@@ -181,6 +183,13 @@ class Screen : public concurrency::OSThread
         enqueueCmd(cmd);
     }
 
+    void startMotionCalibrationScreen()
+    {
+        ScreenCmd cmd;
+        cmd.cmd = Cmd::START_MOTION_CALIBRATION_SCREEN;
+        enqueueCmd(cmd);
+    }
+
     void startShutdownScreen()
     {
         ScreenCmd cmd;
@@ -197,6 +206,9 @@ class Screen : public concurrency::OSThread
 
     /// Stops showing the bluetooth PIN screen.
     void stopBluetoothPinScreen() { enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_BLUETOOTH_PIN_SCREEN}); }
+
+    /// Stops showing the bluetooth PIN screen.
+    void stopMotionCalibrationScreen() { enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_MOTION_CALIBRATION_SCREEN}); }
 
     /// Stops showing the boot screen.
     void stopBootScreen() { enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_BOOT_SCREEN}); }
@@ -353,6 +365,7 @@ class Screen : public concurrency::OSThread
     void handleShowNextFrame();
     void handleShowPrevFrame();
     void handleStartBluetoothPinScreen(uint32_t pin);
+    void handleMotionCalibrationScreen();
     void handlePrint(const char *text);
     void handleStartFirmwareUpdateScreen();
     void handleShutdownScreen();

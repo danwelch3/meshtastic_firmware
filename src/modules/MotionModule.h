@@ -51,6 +51,7 @@ class MotionModule
     void init();
     void updateData();
     float getHeading();
+    void calibrate();
     // float getPitch();
     // float getYaw();
     // float getRoll();
