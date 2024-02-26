@@ -40,6 +40,7 @@ class ScanI2C
         BMX160,
         MPU9250,
         ICM20948,
+        BNO08x,
 #ifdef HAS_NCP5623
         NCP5623,
 #endif

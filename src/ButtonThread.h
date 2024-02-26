@@ -26,7 +26,7 @@ void wakeOnIrq(int irq, int mode)
         FALLING);
 }
 
-static OneButton *pBtn;
+// static OneButton *pBtn;
 
 class ButtonThread : public concurrency::OSThread
 {
@@ -70,7 +70,7 @@ class ButtonThread : public concurrency::OSThread
         userButton.setDebounceMs(10);
         userButton.attachDuringLongPress(userButtonPressedLong);
         userButton.attachDoubleClick(userButtonDoublePressed);
-        userButton.attachMultiClick(userButtonMultiPressed);
+        userButton.attachMultiClick(userButtonMultiPressed, (void *) &userButton);
         userButton.attachLongPressStart(userButtonPressedLongStart);
         userButton.attachLongPressStop(userButtonPressedLongStop);
 #if defined(ARCH_PORTDUINO)
@@ -203,9 +203,11 @@ class ButtonThread : public concurrency::OSThread
         service.sendNetworkPing(NODENUM_BROADCAST, true);
     }
 
-    static void userButtonMultiPressed()
+    static void userButtonMultiPressed(void *oneButton)
     {
-        int n = pBtn->getNumberClicks();
+        OneButton *button = (OneButton *)oneButton;
+        int n = button->getNumberClicks();
+        LOG_DEBUG("[Button] multi press detected, count = %i\n", n);
         if (n == 3) {
             if (!config.device.disable_triple_click && (gps != nullptr)) {
                 gps->toggleGpsMode();
@@ -223,7 +225,7 @@ class ButtonThread : public concurrency::OSThread
                 }
             }
         } else if (n == 5) {
-            LOG_DEBUG("5 button clicks... do calibration");
+            LOG_DEBUG("[Button] start motion calibration\n");
             screen->startMotionCalibrationScreen();
         }
     }

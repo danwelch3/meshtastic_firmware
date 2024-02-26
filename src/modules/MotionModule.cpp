@@ -83,6 +83,15 @@ void MotionModule::init()
         } else {
             LOG_DEBUG("MPU9250 failed to initialize\n");
         }
+    } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
+        LOG_DEBUG("BNO08x initializing\n");
+        bno08x.initialize(use_accelerometer.address);
+        if (bno08x.testConnection()) {
+            hasCompass = true;
+            LOG_DEBUG("BNO08x sucessfully initialized\n");
+        } else {
+            LOG_DEBUG("BNO08x failed to initialize");
+        }
     }
 }
 
@@ -97,6 +106,9 @@ void MotionModule::updateData()
         mpu9250.update();
         MotionModule::heading = mpu9250.getHeading();
         // LOG_DEBUG("MAG CENTER (%.1f, %.1f, %.1f)\n", mpu9250.mx_centre, mpu9250.my_centre, mpu9250.mz_centre);
+    } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
+        bno08x.update();
+        MotionModule::heading = bno08x.getHeading();
     }
 }
 
@@ -108,6 +120,9 @@ float MotionModule::getHeading()
     } else if (accelerometer_type == ScanI2C::DeviceType::MPU9250) {
         mpu9250.update();
         return mpu9250.getHeading();
+    } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
+        bno08x.update();
+        return bno08x.getHeading();
     }
 
     return 0.0;
@@ -119,6 +134,8 @@ void MotionModule::calibrate()
         bmx160.calibrateMag();
     } else if (accelerometer_type == ScanI2C::DeviceType::MPU9250) {
         mpu9250.calibrateMag();
+    } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
+        bno08x.calibrateMag();
     }
 }
 

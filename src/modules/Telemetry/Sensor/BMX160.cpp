@@ -50,8 +50,8 @@ void BMX160::calibrateMag()
     Serial.print(N);
     Serial.println(" points for magnetometer calibration, 3/second");
     Serial.println("TURN SENSOR VERY SLOWLY AND CAREFULLY IN 3D");
-    Serial.println("Starting in 5 seconds...");
-    delay(3000);
+    Serial.println("Starting in 1 seconds...");
+    delay(1000);
 
     for (int i = 0; i < N; i++) {
 

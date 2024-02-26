@@ -183,8 +183,8 @@ void MPU9250::calibrateMag()
     Serial.print(N);
     Serial.println(" points for magnetometer calibration, 3/second");
     Serial.println("TURN SENSOR VERY SLOWLY AND CAREFULLY IN 3D");
-    Serial.println("Starting in 5 seconds...");
-    delay(5000);
+    Serial.println("Starting in 1 seconds...");
+    delay(1000);
 
     I2Cdev::readBytes(MPU9150_RA_MAG_ADDRESS, MPU9250_MAG_ASAX, 3, m_sense);
     Serial.print("MAG Sensitivity value = ");

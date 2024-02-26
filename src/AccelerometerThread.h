@@ -13,6 +13,9 @@
 #ifndef MPU9250
 #include <modules/Telemetry/Sensor/MPU9250.h>
 #endif
+#ifndef BNO08x
+#include <modules/Telemetry/Sensor/BNO08x.h>
+#endif
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -128,24 +131,14 @@ class AccelerometerThread : public concurrency::OSThread
             // It corresponds to isDoubleClick interrupt
             bmaSensor.enableWakeupInterrupt();
         } else if (accelerometer_type == ScanI2C::DeviceType::BMX160) {
-            // LOG_DEBUG("BMX160 initializing\n");
-            // bmx160.setAddr(accelerometer_found.address);
-            // if (bmx160.begin() == true) {
-            //     bmx160.wakeUp(); // enable the gyroscope and accelerometer sensor
-            //     bmx160.setGyroRange(eGyroRange_500DPS); // value TBD
-            //     bmx160.setAccelRange(eAccelRange_2G); // value TBD
-            //     LOG_DEBUG("BMX160 sucessfully initialized\n");
-            // } else {
-            //     LOG_DEBUG("BMX160 failed to initialize\n");
-            // }
+            LOG_DEBUG("BMX160 initializing\n");
+            bmx160.initialize(accelerometer_found.address);
         } else if (accelerometer_type == ScanI2C::DeviceType::MPU9250) {
             LOG_DEBUG("MPU9250 initializing\n");
             mpu9250.initialize();
-            // if (mpu9250.setup(accelerometer_found.address) == true) {
-            //     LOG_DEBUG("MPU9250 sucessfully initialized\n");
-            // } else {
-            //     LOG_DEBUG("MPU9250 failed to initialize\n");
-            // }
+        } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
+            LOG_DEBUG("BNO08x initializing\n");
+            bno08x.initialize(accelerometer_found.address);
         }
     }
   protected:
@@ -195,6 +188,7 @@ class AccelerometerThread : public concurrency::OSThread
     Adafruit_LIS3DH lis;
     BMX160 bmx160;
     MPU9250 mpu9250;
+    BNO08x bno08x;
     BMA423 bmaSensor;
     bool BMA_IRQ = false;
 };

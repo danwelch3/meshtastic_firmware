@@ -5,6 +5,9 @@
 #include <modules/Telemetry/Sensor/MPU9250.h>
 #include <modules/Telemetry/Sensor/quaternionFilters.h>
 #endif
+#ifndef BNO08x
+#include <modules/Telemetry/Sensor/BNO08x.h>
+#endif
 
 #include "detect/ScanI2C.h"
 #include "detect/ScanI2CTwoWire.h"
@@ -66,6 +69,7 @@ class MotionModule
   protected:
     BMX160 bmx160;
     MPU9250 mpu9250;
+    BNO08x bno08x;
     float minMag[3];
     float maxMag[3];
 };

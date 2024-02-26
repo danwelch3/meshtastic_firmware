@@ -207,8 +207,10 @@ class Screen : public concurrency::OSThread
     /// Stops showing the bluetooth PIN screen.
     void stopBluetoothPinScreen() { enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_BLUETOOTH_PIN_SCREEN}); }
 
-    /// Stops showing the bluetooth PIN screen.
-    void stopMotionCalibrationScreen() { enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_MOTION_CALIBRATION_SCREEN}); }
+    /// Stops showing the motion calibration.
+    void stopMotionCalibrationScreen() {
+        enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_MOTION_CALIBRATION_SCREEN});
+    }
 
     /// Stops showing the boot screen.
     void stopBootScreen() { enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_BOOT_SCREEN}); }

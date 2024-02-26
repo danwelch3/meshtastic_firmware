@@ -85,6 +85,8 @@ static char btPIN[16] = "888888";
 
 uint32_t logo_timeout = 5000; // 4 seconds for EACH logo
 uint32_t motion_calibration_timeout = 5000;
+uint32_t calibration_start_time = 0;
+bool calibration_in_progress = false;
 
 uint32_t hours_in_month = 730;
 
@@ -351,22 +353,26 @@ static void drawFrameMotionCalibration(OLEDDisplay *display, OLEDDisplayUiState 
     int x_offset = display->width() / 2;
     int y_offset = display->height() <= 80 ? 0 : 32;
     display->setTextAlignment(TEXT_ALIGN_CENTER);
-    display->setFont(FONT_MEDIUM);
-    display->drawString(x_offset + x, y_offset + y, "Calibrating Motion Sensor");
+    display->setFont(FONT_SMALL);
+    display->drawString(x_offset + x, y_offset + y, "Calibrating Gyro");
 
     display->setFont(FONT_SMALL);
     y_offset = display->height() == 64 ? y_offset + FONT_HEIGHT_MEDIUM - 4 : y_offset + FONT_HEIGHT_MEDIUM + 5;
-    display->drawString(x_offset + x, y_offset + y, "Move device in all dimensions");
+    display->drawString(x_offset + x, y_offset + y, "Wave device in 3D");
 
     display->setFont(FONT_SMALL);
     y_offset = display->height() == 64 ? y_offset + FONT_HEIGHT_SMALL - 5 : y_offset + FONT_HEIGHT_SMALL + 5;
-    display->drawString(x_offset + x, y_offset + y, "for 5 seconds");
+    display->drawString(x_offset + x, y_offset + y, "for 60 seconds");
 
-    motionModule->calibrate();
+    if( (millis() - calibration_start_time) > 500 && !calibration_in_progress ) {
+        calibration_in_progress = true;
+        motionModule->calibrate();
+        screen->stopMotionCalibrationScreen();
+    }
 
-    delay(motion_calibration_timeout);
+    // delay(motion_calibration_timeout);
 
-    screen->stopMotionCalibrationScreen();
+    // screen->stopMotionCalibrationScreen();
 }
 
 static void drawFrameFirmware(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
@@ -1290,7 +1296,12 @@ int32_t Screen::runOnce()
             break;
         case Cmd::START_MOTION_CALIBRATION_SCREEN:
             handleMotionCalibrationScreen();
+            calibration_start_time = millis();
+            break;
         case Cmd::STOP_MOTION_CALIBRATION_SCREEN:
+            setFrames();
+            calibration_in_progress = false;
+            break;
         case Cmd::PRINT:
             handlePrint(cmd.print_text);
             free(cmd.print_text);
@@ -1482,7 +1493,7 @@ void Screen::handleStartBluetoothPinScreen(uint32_t pin)
 
 void Screen::handleMotionCalibrationScreen()
 {
-    LOG_DEBUG("showing motion calibration screen\n");
+    LOG_DEBUG("[Screen] showing motion calibration screen\n");
     showingNormalScreen = false;
 
     static FrameCallback frames[] = {drawFrameMotionCalibration};

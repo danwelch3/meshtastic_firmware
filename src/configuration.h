@@ -132,6 +132,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MPU9250_ADDR 0x69
 #define MPU9250_ADDR_ALTERNATE 0x68
 #define ICM20948_ADDR 0x69
+#define BNO08x_ADDR 0x4B
+#define BNO08x_ADDR_ALTERNATE 0x4A
 
 // -----------------------------------------------------------------------------
 // LED

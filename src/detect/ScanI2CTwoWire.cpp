@@ -321,6 +321,22 @@ void ScanI2CTwoWire::scanPort(I2CPort port)
                     break;
                 }
 
+            case BNO08x_ADDR:
+                registerValue = getRegisterValue(ScanI2CTwoWire::RegisterLocation(addr, 0xF9), 1);
+                if (registerValue == 0xF8) {
+                    type = BNO08x;
+                    LOG_INFO("BNO08x sensor found at address 0x%x\n", (uint8_t)addr.address);
+                    break;
+                }
+
+            case BNO08x_ADDR_ALTERNATE:
+                registerValue = getRegisterValue(ScanI2CTwoWire::RegisterLocation(addr, 0xF9), 1);
+                if (registerValue == 0xF8) {
+                    type = BNO08x;
+                    LOG_INFO("BNO08x sensor found at address 0x%x\n", (uint8_t)addr.address);
+                    break;
+                }
+
             case LPS22HB_ADDR_ALT:
                 SCAN_SIMPLE_CASE(LPS22HB_ADDR, LPS22HB, "LPS22HB sensor found\n")
 
