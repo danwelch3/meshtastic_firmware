@@ -133,9 +133,9 @@ class AccelerometerThread : public concurrency::OSThread
         } else if (accelerometer_type == ScanI2C::DeviceType::BMX160) {
             LOG_DEBUG("BMX160 initializing\n");
             bmx160.initialize(accelerometer_found.address);
-        } else if (accelerometer_type == ScanI2C::DeviceType::MPU9250) {
-            LOG_DEBUG("MPU9250 initializing\n");
-            mpu9250.initialize();
+        // } else if (accelerometer_type == ScanI2C::DeviceType::MPU9250) {
+        //     LOG_DEBUG("MPU9250 initializing\n");
+        //     mpu9250.initialize(accelerometer_found.address, Wire, 400000);
         } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
             LOG_DEBUG("BNO08x initializing\n");
             bno08x.initialize(accelerometer_found.address);
@@ -187,7 +187,7 @@ class AccelerometerThread : public concurrency::OSThread
     Adafruit_MPU6050 mpu;
     Adafruit_LIS3DH lis;
     BMX160 bmx160;
-    MPU9250 mpu9250;
+    // MPU9250 mpu9250;
     BNO08x bno08x;
     BMA423 bmaSensor;
     bool BMA_IRQ = false;
