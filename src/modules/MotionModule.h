@@ -3,11 +3,11 @@
 #endif
 #ifndef MPU9250
 #include <modules/Telemetry/Sensor/MPU9250.h>
-#include <modules/Telemetry/Sensor/quaternionFilters.h>
 #endif
 #ifndef BNO08x
 #include <modules/Telemetry/Sensor/BNO08x.h>
 #endif
+#include <modules/Telemetry/Sensor/quaternionFilters.h>
 
 #include "detect/ScanI2C.h"
 #include "detect/ScanI2CTwoWire.h"
@@ -65,6 +65,8 @@ class MotionModule
     pyrData pyr;
     float heading = 0.0;
     bool hasCompass;
+
+    float pitch, yaw, roll, temperature;    
 
   protected:
     BMX160 bmx160;

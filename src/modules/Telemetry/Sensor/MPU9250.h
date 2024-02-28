@@ -38,7 +38,6 @@ THE SOFTWARE.
 #define _MPU9250_H_
 
 #include "../../I2Cdev.h"
-// #include <avr/pgmspace.h>
 
 // Magnetometer Registers
 #define MPU9150_RA_MAG_ADDRESS 0x0C
@@ -1008,6 +1007,15 @@ class MPU9250
     float my_centre = 45.0;
     float mz_centre = 1.0;
 
+    float Axyz[3];
+    float Gxyz[3];
+    float Mxyz[3];
+
+    uint32_t count = 0, sumCount = 0; // used to control display output rate
+    float deltat = 0.0f, sum = 0.0f;  // integration interval for both filter schemes
+    uint32_t lastUpdate = 0, firstUpdate = 0; // used to calculate integration interval
+    uint32_t Now = 0;        // used to calculate integration interval
+
   private:
     // float mx_centre;
     // float my_centre;
@@ -1016,10 +1024,6 @@ class MPU9250
     uint8_t devAddr;
     uint8_t buffer[14];
     uint8_t buffer_m[6];
-
-    float Axyz[3];
-    float Gxyz[3];
-    float Mxyz[3];
 
     uint8_t m_sense[3];
     float m_asa[3];

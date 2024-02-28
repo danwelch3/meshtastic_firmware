@@ -104,12 +104,38 @@ void MotionModule::updateData()
         // LOG_DEBUG("MAG CENTER (%.1f, %.1f, %.1f)\n", bmx160.mx_centre, bmx160.my_centre, bmx160.mz_centre);
     } else if (accelerometer_type == ScanI2C::DeviceType::MPU9250) {
         mpu9250.update();
+        MahonyQuaternionUpdate(mpu9250.Axyz[0], mpu9250.Axyz[1], mpu9250.Axyz[2],
+                               mpu9250.Gxyz[0] * DEG_TO_RAD, mpu9250.Gxyz[1] * DEG_TO_RAD, mpu9250.Gxyz[2] * DEG_TO_RAD,
+                               mpu9250.Mxyz[0], mpu9250.Mxyz[1], mpu9250.Mxyz[2],
+                               mpu9250.deltat);
+
         MotionModule::heading = mpu9250.getHeading();
         // LOG_DEBUG("MAG CENTER (%.1f, %.1f, %.1f)\n", mpu9250.mx_centre, mpu9250.my_centre, mpu9250.mz_centre);
     } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
         bno08x.update();
         MotionModule::heading = bno08x.getHeading();
     }
+
+    yaw   = atan2(2.0f * (*(getQ()+1) * *(getQ()+2) + *getQ()
+                * *(getQ()+3)), *getQ() * *getQ() + *(getQ()+1)
+                * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) - *(getQ()+3)
+                * *(getQ()+3));
+    pitch = -asin(2.0f * (*(getQ()+1) * *(getQ()+3) - *getQ()
+                * *(getQ()+2)));
+    roll  = atan2(2.0f * (*getQ() * *(getQ()+1) + *(getQ()+2)
+                * *(getQ()+3)), *getQ() * *getQ() - *(getQ()+1)
+                * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) + *(getQ()+3)
+                * *(getQ()+3));
+    pitch *= RAD_TO_DEG;
+    yaw   *= RAD_TO_DEG;
+
+    // Declination of SparkFun Electronics (40°05'26.6"N 105°11'05.9"W) is
+    // 	8° 30' E  ± 0° 21' (or 8.5°) on 2016-07-19
+    // - http://www.ngdc.noaa.gov/geomag-web/#declination
+    yaw  -= 8.5;
+    roll *= RAD_TO_DEG;
+
+    LOG_DEBUG("[Motion] Pitch=%.1f Yaw=%.1f Roll=%.1f\n", pitch, yaw, roll);
 }
 
 float MotionModule::getHeading()

@@ -2177,6 +2177,12 @@ void MPU9250::update()
     Mxyz[0] = Mxyz[0] - mx_centre;
     Mxyz[1] = Mxyz[1] - my_centre;
     Mxyz[2] = Mxyz[2] - mz_centre;
+
+    Now = micros();
+    deltat = ((Now - lastUpdate) / 1000000.0f);
+    lastUpdate = Now;
+    sum += deltat; // sum for averaging filter update rate
+    sumCount++;
 }
 
 float MPU9250::getHeading()
