@@ -79,7 +79,13 @@ bool MPU9250::testConnection()
 {
   byte imu_is = readByte(_I2Caddr, WHO_AM_I_MPU9250);
   byte mag_is = readByte(AK8963_ADDRESS, WHO_AM_I_AK8963);
-  if (mag_is == 0x48 && imu_is == 0x71) {
+  Serial.print("IMU ADDR = ");
+  Serial.print(imu_is, HEX);
+  Serial.print(" MAG ADDR = ");
+  Serial.print(mag_is, HEX);
+  Serial.print("\n");
+  // if (mag_is == 0x48 && imu_is == 0x71) {
+  if (imu_is == 0x71) {
     return true;
   }
   return false;
@@ -462,12 +468,12 @@ void MPU9250::calibrateMPU9250(float * gyroBias, float * accelBias)
   data[5] = (-gyro_bias[2]/4)       & 0xFF;
 
   // Push gyro biases to hardware registers
-  writeByte(_I2Caddr, XG_OFFSET_H, data[0]);
-  writeByte(_I2Caddr, XG_OFFSET_L, data[1]);
-  writeByte(_I2Caddr, YG_OFFSET_H, data[2]);
-  writeByte(_I2Caddr, YG_OFFSET_L, data[3]);
-  writeByte(_I2Caddr, ZG_OFFSET_H, data[4]);
-  writeByte(_I2Caddr, ZG_OFFSET_L, data[5]);
+  // writeByte(_I2Caddr, XG_OFFSET_H, data[0]);
+  // writeByte(_I2Caddr, XG_OFFSET_L, data[1]);
+  // writeByte(_I2Caddr, YG_OFFSET_H, data[2]);
+  // writeByte(_I2Caddr, YG_OFFSET_L, data[3]);
+  // writeByte(_I2Caddr, ZG_OFFSET_H, data[4]);
+  // writeByte(_I2Caddr, ZG_OFFSET_L, data[5]);
 
   // Output scaled gyro biases for display in the main program
   gyroBias[0] = (float) gyro_bias[0]/(float) gyrosensitivity;
@@ -534,12 +540,12 @@ void MPU9250::calibrateMPU9250(float * gyroBias, float * accelBias)
   // Apparently this is not working for the acceleration biases in the MPU-9250
   // Are we handling the temperature correction bit properly?
   // Push accelerometer biases to hardware registers
-  writeByte(_I2Caddr, XA_OFFSET_H, data[0]);
-  writeByte(_I2Caddr, XA_OFFSET_L, data[1]);
-  writeByte(_I2Caddr, YA_OFFSET_H, data[2]);
-  writeByte(_I2Caddr, YA_OFFSET_L, data[3]);
-  writeByte(_I2Caddr, ZA_OFFSET_H, data[4]);
-  writeByte(_I2Caddr, ZA_OFFSET_L, data[5]);
+  // writeByte(_I2Caddr, XA_OFFSET_H, data[0]);
+  // writeByte(_I2Caddr, XA_OFFSET_L, data[1]);
+  // writeByte(_I2Caddr, YA_OFFSET_H, data[2]);
+  // writeByte(_I2Caddr, YA_OFFSET_L, data[3]);
+  // writeByte(_I2Caddr, ZA_OFFSET_H, data[4]);
+  // writeByte(_I2Caddr, ZA_OFFSET_L, data[5]);
 
   // Output scaled accelerometer biases for display in the main program
   accelBias[0] = (float)accel_bias[0]/(float)accelsensitivity;

@@ -207,7 +207,7 @@ class ButtonThread : public concurrency::OSThread
     {
         OneButton *button = (OneButton *)oneButton;
         int n = button->getNumberClicks();
-        LOG_DEBUG("[Button] multi press detected, count = %i\n", n);
+        LOG_DEBUG("multi press detected, count = %i\n", n);
         if (n == 3) {
             if (!config.device.disable_triple_click && (gps != nullptr)) {
                 gps->toggleGpsMode();
@@ -225,7 +225,10 @@ class ButtonThread : public concurrency::OSThread
                 }
             }
         } else if (n == 5) {
-            LOG_DEBUG("[Button] start motion calibration\n");
+            LOG_DEBUG("start magnetometer calibration\n");
+            screen->startMagnetometerCalibrationScreen();
+        } else if (n == 6) {
+            LOG_DEBUG("start motion calibration\n");
             screen->startMotionCalibrationScreen();
         }
     }

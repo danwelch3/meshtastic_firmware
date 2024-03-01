@@ -348,13 +348,13 @@ static void drawFrameBluetooth(OLEDDisplay *display, OLEDDisplayUiState *state, 
     display->drawString(x_offset + x, y_offset + y, deviceName);
 }
 
-static void drawFrameMotionCalibration(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+static void drawFrameMagnetometerCalibration(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
     int x_offset = display->width() / 2;
     int y_offset = display->height() <= 80 ? 0 : 32;
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     display->setFont(FONT_SMALL);
-    display->drawString(x_offset + x, y_offset + y, "Calibrating Gyro");
+    display->drawString(x_offset + x, y_offset + y, "Calibrating Magnetometer");
 
     display->setFont(FONT_SMALL);
     y_offset = display->height() == 64 ? y_offset + FONT_HEIGHT_MEDIUM - 4 : y_offset + FONT_HEIGHT_MEDIUM + 5;
@@ -362,17 +362,37 @@ static void drawFrameMotionCalibration(OLEDDisplay *display, OLEDDisplayUiState 
 
     display->setFont(FONT_SMALL);
     y_offset = display->height() == 64 ? y_offset + FONT_HEIGHT_SMALL - 5 : y_offset + FONT_HEIGHT_SMALL + 5;
-    display->drawString(x_offset + x, y_offset + y, "for 60 seconds");
+    display->drawString(x_offset + x, y_offset + y, "for 30 seconds");
 
     if( (millis() - calibration_start_time) > 500 && !calibration_in_progress ) {
         calibration_in_progress = true;
-        motionModule->calibrate();
+        motionModule->calibrateMag();
         screen->stopMotionCalibrationScreen();
     }
+}
 
-    // delay(motion_calibration_timeout);
+static void drawFrameMotionCalibration(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+{
+    int x_offset = display->width() / 2;
+    int y_offset = display->height() <= 80 ? 0 : 32;
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->setFont(FONT_SMALL);
+    display->drawString(x_offset + x, y_offset + y, "Calibrating Motion");
 
-    // screen->stopMotionCalibrationScreen();
+    display->setFont(FONT_SMALL);
+    y_offset = display->height() == 64 ? y_offset + FONT_HEIGHT_MEDIUM - 4 : y_offset + FONT_HEIGHT_MEDIUM + 5;
+    display->drawString(x_offset + x, y_offset + y, "Keep device still");
+    
+    display->setFont(FONT_SMALL);
+    y_offset = display->height() == 64 ? y_offset + FONT_HEIGHT_SMALL - 5 : y_offset + FONT_HEIGHT_SMALL + 5;
+    display->drawString(x_offset + x, y_offset + y, "starting in 5 seconds");
+
+    if( (millis() - calibration_start_time) > 500 && !calibration_in_progress ) {
+        calibration_in_progress = true;
+        delay(5000);
+        motionModule->calibrateAccelGyro();
+        screen->stopMotionCalibrationScreen();
+    }
 }
 
 static void drawFrameFirmware(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
@@ -1294,6 +1314,14 @@ int32_t Screen::runOnce()
         case Cmd::STOP_BOOT_SCREEN:
             setFrames();
             break;
+        case Cmd::START_MAGNETOMETER_CALIBRATION_SCREEN:
+            handleMagnetometerCalibrationScreen();
+            calibration_start_time = millis();
+            break;
+        case Cmd::STOP_MAGNETOMETER_CALIBRATION_SCREEN:
+            setFrames();
+            calibration_in_progress = false;
+            break;
         case Cmd::START_MOTION_CALIBRATION_SCREEN:
             handleMotionCalibrationScreen();
             calibration_start_time = millis();
@@ -1488,6 +1516,15 @@ void Screen::handleStartBluetoothPinScreen(uint32_t pin)
 
     static FrameCallback frames[] = {drawFrameBluetooth};
     snprintf(btPIN, sizeof(btPIN), "%06u", pin);
+    setFrameImmediateDraw(frames);
+}
+
+void Screen::handleMagnetometerCalibrationScreen()
+{
+    LOG_DEBUG("showing magnetometer calibration screen\n");
+    showingNormalScreen = false;
+
+    static FrameCallback frames[] = {drawFrameMagnetometerCalibration};
     setFrameImmediateDraw(frames);
 }
 

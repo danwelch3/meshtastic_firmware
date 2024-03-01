@@ -77,23 +77,8 @@ void MotionModule::init()
         LOG_DEBUG("MPU9250 initializing\n");
         mpu9250.initialize(use_accelerometer.address, Wire, 400000);
         if (mpu9250.testConnection()) {
+            
             mpu9250.MPU9250SelfTest(mpu9250.selfTest);
-            Serial.print(F("x-axis self test: acceleration trim within : "));
-            Serial.print(mpu9250.selfTest[0],1); Serial.println("% of factory value");
-            Serial.print(F("y-axis self test: acceleration trim within : "));
-            Serial.print(mpu9250.selfTest[1],1); Serial.println("% of factory value");
-            Serial.print(F("z-axis self test: acceleration trim within : "));
-            Serial.print(mpu9250.selfTest[2],1); Serial.println("% of factory value");
-            Serial.print(F("x-axis self test: gyration trim within : "));
-            Serial.print(mpu9250.selfTest[3],1); Serial.println("% of factory value");
-            Serial.print(F("y-axis self test: gyration trim within : "));
-            Serial.print(mpu9250.selfTest[4],1); Serial.println("% of factory value");
-            Serial.print(F("z-axis self test: gyration trim within : "));
-            Serial.print(mpu9250.selfTest[5],1); Serial.println("% of factory value");
-
-            // Calibrate gyro and accelerometers, load biases in bias registers
-            LOG_DEBUG("Calibrating MPU\n");
-            mpu9250.calibrateMPU9250(mpu9250.gyroBias, mpu9250.accelBias);
             
             mpu9250.initMPU9250();
             mpu9250.initAK8963(mpu9250.factoryMagCalibration);
@@ -101,22 +86,25 @@ void MotionModule::init()
             mpu9250.getGres();
             mpu9250.getMres();
 
-            LOG_DEBUG("Calibrating MPU Mag\n");
-            mpu9250.magCalMPU9250(mpu9250.magBias, mpu9250.magScale);
-            Serial.println("AK8963 mag biases (mG)");
-            Serial.println(mpu9250.magBias[0]);
-            Serial.println(mpu9250.magBias[1]);
-            Serial.println(mpu9250.magBias[2]);
+            // set pre-calculated accel and gyro bias values
+            mpu9250.accelBias[0] = 0.0397;
+            mpu9250.accelBias[1] = -0.0060;
+            mpu9250.accelBias[2] = 0.0811;
+            mpu9250.gyroBias[0] = -3.3282;
+            mpu9250.gyroBias[1] = 1.4656;
+            mpu9250.gyroBias[2] = 0.6641;
 
-            Serial.println("AK8963 mag scale (mG)");
-            Serial.println(mpu9250.magScale[0]);
-            Serial.println(mpu9250.magScale[1]);
-            Serial.println(mpu9250.magScale[2]);
+            // set pre-calculated mag bias and scale
+            mpu9250.magBias[0] = 456;
+            mpu9250.magBias[1] = 190;
+            mpu9250.magBias[2] = -143;
+
+            mpu9250.magScale[0] = 1.10;
+            mpu9250.magScale[1] = 1.03;
+            mpu9250.magScale[2] = 0.90;
 
             hasCompass = true;
             LOG_DEBUG("MPU9250 sucessfully initialized\n");
-            // mpu9250.calibrateMag();
-            // mpu9250.magCalMPU9250(mpu9250.magBias, mpu9250.magScale);
         } else {
             LOG_DEBUG("MPU9250 failed to initialize\n");
         }
@@ -147,17 +135,21 @@ void MotionModule::updateData()
 
             // Now we'll calculate the accleration value into actual g's
             // This depends on scale being set
-            mpu9250.ax = (float)mpu9250.accelCount[0] * mpu9250.aRes; // - mpu9250.accelBias[0];
-            mpu9250.ay = (float)mpu9250.accelCount[1] * mpu9250.aRes; // - mpu9250.accelBias[1];
-            mpu9250.az = (float)mpu9250.accelCount[2] * mpu9250.aRes; // - mpu9250.accelBias[2];
+            mpu9250.ax = (float)mpu9250.accelCount[0] * mpu9250.aRes - mpu9250.accelBias[0];
+            mpu9250.ay = (float)mpu9250.accelCount[1] * mpu9250.aRes - mpu9250.accelBias[1];
+            mpu9250.az = ((float)mpu9250.accelCount[2] * mpu9250.aRes - mpu9250.accelBias[2]) * -1.0;
+            
+            // LOG_DEBUG("A %.4f,%.4f,%.4f\n", mpu9250.ax, mpu9250.ay, mpu9250.az);
 
             mpu9250.readGyroData(mpu9250.gyroCount);  // Read the x/y/z adc values
 
             // Calculate the gyro value into actual degrees per second
             // This depends on scale being set
-            mpu9250.gx = (float)mpu9250.gyroCount[0] * mpu9250.gRes;
-            mpu9250.gy = (float)mpu9250.gyroCount[1] * mpu9250.gRes;
-            mpu9250.gz = (float)mpu9250.gyroCount[2] * mpu9250.gRes;
+            mpu9250.gx = (float)mpu9250.gyroCount[0] * mpu9250.gRes - mpu9250.gyroBias[0];
+            mpu9250.gy = (float)mpu9250.gyroCount[1] * mpu9250.gRes - mpu9250.gyroBias[1];
+            mpu9250.gz = (float)mpu9250.gyroCount[2] * mpu9250.gRes - mpu9250.gyroBias[2];
+
+            // LOG_DEBUG("G %.4f,%.4f,%.4f\n", mpu9250.gx, mpu9250.gy, mpu9250.gz);
 
             mpu9250.readMagData(mpu9250.magCount);  // Read the x/y/z adc values
 
@@ -182,32 +174,44 @@ void MotionModule::updateData()
         MahonyQuaternionUpdate(mpu9250.ax, mpu9250.ay, mpu9250.az, mpu9250.gx * DEG_TO_RAD,
                          mpu9250.gy * DEG_TO_RAD, mpu9250.gz * DEG_TO_RAD, mpu9250.my,
                          mpu9250.mx, mpu9250.mz, mpu9250.deltat);
+        // -0.0801,-0.0781,-1.0819,-0.1297,0.0381,-0.0153,-215.1,-663.3,-14654.3
+        // MahonyQuaternionUpdate(mpu9250.ax, mpu9250.ay, mpu9250.az, mpu9250.gx * DEG_TO_RAD,
+        //                  mpu9250.gy * DEG_TO_RAD, mpu9250.gz * DEG_TO_RAD, mpu9250.my,
+        //                  mpu9250.mx, mpu9250.mz, 1000);
+
+        LOG_DEBUG("Q = %.3f, %.3f, %.3f, %.3f\n", *getQ(), *(getQ()+1), *(getQ()+2), *(getQ()+3));
 
         LOG_DEBUG("[Motion] Accel X=%.1f Y=%.1f Z=%.1f\n", mpu9250.ax, mpu9250.ay, mpu9250.az);
         LOG_DEBUG("[Motion] Gyro  X=%.1f Y=%.1f Z=%.1f\n", mpu9250.gx, mpu9250.gy, mpu9250.gz);
         LOG_DEBUG("[Motion] Mag   X=%.1f Y=%.1f Z=%.1f\n", mpu9250.mx, mpu9250.my, mpu9250.mz);
 
+        // LOG_DEBUG("%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.1f,%.1f,%.1f\n", mpu9250.ax, mpu9250.ay, mpu9250.az, mpu9250.gx, mpu9250.gy, mpu9250.gz, mpu9250.mx, mpu9250.my, mpu9250.mz);
+
         mpu9250.tempCount = mpu9250.readTempData();  // Read the adc values
-        // Temperature in degrees Centigrade
-        mpu9250.temperature = ((float) mpu9250.tempCount) / 333.87 + 21.0;
+        mpu9250.temperature = ((float) mpu9250.tempCount) / 333.87 + 21.0; // Temperature in degrees Centigrade
+
+        yaw_y = 2.0f * (*getQ()+1 * *getQ()+2 + *getQ() * *getQ()+3);
+        yaw_x = *getQ() * *getQ() + *getQ()+1 * *getQ()+1 - *getQ()+2 * *getQ()+2 - *getQ()+3 * *getQ()+3;
+        LOG_DEBUG("YAW_X = %.4f, YAW_Y = %.4f\n", yaw_x, yaw_y);
 
         mpu9250.yaw   = atan2(2.0f * (*(getQ()+1) * *(getQ()+2) + *getQ()
                         * *(getQ()+3)), *getQ() * *getQ() + *(getQ()+1)
                         * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) - *(getQ()+3)
                         * *(getQ()+3));
+        // mpu9250.yaw   = atan2(yaw_y, yaw_x);
+        mpu9250.yaw   *= RAD_TO_DEG;
+        mpu9250.yaw  -= 8.5; // declination
+        
         mpu9250.pitch = -asin(2.0f * (*(getQ()+1) * *(getQ()+3) - *getQ()
                         * *(getQ()+2)));
+        // mpu9250.pitch = asin(2.0f * (q+1 * q+3 - q * q+2));
+        mpu9250.pitch *= RAD_TO_DEG;
+        
         mpu9250.roll  = atan2(2.0f * (*getQ() * *(getQ()+1) + *(getQ()+2)
                         * *(getQ()+3)), *getQ() * *getQ() - *(getQ()+1)
                         * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) + *(getQ()+3)
                         * *(getQ()+3));
-        mpu9250.pitch *= RAD_TO_DEG;
-        mpu9250.yaw   *= RAD_TO_DEG;
-
-        // Declination of SparkFun Electronics (40°05'26.6"N 105°11'05.9"W) is
-        // 	8° 30' E  ± 0° 21' (or 8.5°) on 2016-07-19
-        // - http://www.ngdc.noaa.gov/geomag-web/#declination
-        mpu9250.yaw  -= 8.5;
+        // mpu9250.roll  = atan2((2.0f * (q * q+1 + q+2 * q+3)), (q * q - q+1 * q+1 - q+2 * q+2 + q+3 * q+3));
         mpu9250.roll *= RAD_TO_DEG;
 
         mpu9250.count = millis();
@@ -215,6 +219,7 @@ void MotionModule::updateData()
         mpu9250.sum = 0;
 
         LOG_DEBUG("[Motion] Pitch=%.1f Yaw=%.1f Roll=%.1f\n", mpu9250.pitch, mpu9250.yaw, mpu9250.roll);
+        // LOG_DEBUG("%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%i\n", mpu9250.ax, mpu9250.ay, mpu9250.az, mpu9250.gx, mpu9250.gy, mpu9250.gz, mpu9250.mx, mpu9250.my, mpu9250.mz, mpu9250.temperature, mpu9250.pitch, mpu9250.yaw, mpu9250.roll, mpu9250.deltat);
 
         // MahonyQuaternionUpdate(mpu9250.Axyz[0], mpu9250.Axyz[1], mpu9250.Axyz[2],
         //                        mpu9250.Gxyz[0] * DEG_TO_RAD, mpu9250.Gxyz[1] * DEG_TO_RAD, mpu9250.Gxyz[2] * DEG_TO_RAD,
@@ -223,31 +228,11 @@ void MotionModule::updateData()
 
         // MotionModule::heading = mpu9250.getHeading();
         // LOG_DEBUG("MAG CENTER (%.1f, %.1f, %.1f)\n", mpu9250.mx_centre, mpu9250.my_centre, mpu9250.mz_centre);
+        
     } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
         bno08x.update();
         MotionModule::heading = bno08x.getHeading();
     }
-
-    // yaw   = atan2(2.0f * (*(getQ()+1) * *(getQ()+2) + *getQ()
-    //             * *(getQ()+3)), *getQ() * *getQ() + *(getQ()+1)
-    //             * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) - *(getQ()+3)
-    //             * *(getQ()+3));
-    // pitch = -asin(2.0f * (*(getQ()+1) * *(getQ()+3) - *getQ()
-    //             * *(getQ()+2)));
-    // roll  = atan2(2.0f * (*getQ() * *(getQ()+1) + *(getQ()+2)
-    //             * *(getQ()+3)), *getQ() * *getQ() - *(getQ()+1)
-    //             * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) + *(getQ()+3)
-    //             * *(getQ()+3));
-    // pitch *= RAD_TO_DEG;
-    // yaw   *= RAD_TO_DEG;
-
-    // // Declination of SparkFun Electronics (40°05'26.6"N 105°11'05.9"W) is
-    // // 	8° 30' E  ± 0° 21' (or 8.5°) on 2016-07-19
-    // // - http://www.ngdc.noaa.gov/geomag-web/#declination
-    // yaw  -= 8.5;
-    // roll *= RAD_TO_DEG;
-
-    // LOG_DEBUG("[Motion] Pitch=%.1f Yaw=%.1f Roll=%.1f\n", pitch, yaw, roll);
 }
 
 float MotionModule::getHeading()
@@ -266,15 +251,37 @@ float MotionModule::getHeading()
     return 0.0;
 }
 
-void MotionModule::calibrate()
+void MotionModule::calibrateMag()
 {
     if (accelerometer_type == ScanI2C::DeviceType::BMX160) {
         bmx160.calibrateMag();
     } else if (accelerometer_type == ScanI2C::DeviceType::MPU9250) {
-        // mpu9250.calibrateMag();
         mpu9250.magCalMPU9250(mpu9250.magBias, mpu9250.magScale);
+        Serial.println("AK8963 mag biases (mG)");
+        Serial.println(mpu9250.magBias[0]);
+        Serial.println(mpu9250.magBias[1]);
+        Serial.println(mpu9250.magBias[2]);
+
+        Serial.println("AK8963 mag scale (mG)");
+        Serial.println(mpu9250.magScale[0]);
+        Serial.println(mpu9250.magScale[1]);
+        Serial.println(mpu9250.magScale[2]);
     } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
         bno08x.calibrateMag();
+    }
+}
+
+void MotionModule::calibrateAccelGyro()
+{
+    if (accelerometer_type == ScanI2C::DeviceType::BMX160) {
+        // do something
+    } else if (accelerometer_type == ScanI2C::DeviceType::MPU9250) {
+        mpu9250.calibrateMPU9250(mpu9250.gyroBias, mpu9250.accelBias);
+        LOG_DEBUG("MPU9250 biases\n");
+        LOG_DEBUG("Ax = %.4f Ay = %.4f Az = %.4f\n", mpu9250.accelBias[0], mpu9250.accelBias[1], mpu9250.accelBias[2]);
+        LOG_DEBUG("Gx = %.4f Gy = %.4f Gz = %.4f\n", mpu9250.gyroBias[0], mpu9250.gyroBias[1], mpu9250.gyroBias[2]);
+    } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
+        // do something
     }
 }
 

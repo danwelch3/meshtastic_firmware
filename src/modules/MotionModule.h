@@ -54,7 +54,8 @@ class MotionModule
     void init();
     void updateData();
     float getHeading();
-    void calibrate();
+    void calibrateMag();
+    void calibrateAccelGyro();
     // float getPitch();
     // float getYaw();
     // float getRoll();
@@ -74,6 +75,8 @@ class MotionModule
     BNO08x bno08x;
     float minMag[3];
     float maxMag[3];
+
+    float yaw_x, yaw_y, yaw_test;
 };
 
 extern MotionModule *motionModule;

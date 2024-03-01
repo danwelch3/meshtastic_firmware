@@ -23,6 +23,8 @@ class Screen
     void forceDisplay() {}
     void startBluetoothPinScreen(uint32_t pin) {}
     void stopBluetoothPinScreen() {}
+    void startMagnetometerCalibrationScreen() {}
+    void stopMagnetometerCalibrationScreen() {}
     void startMotionCalibrationScreen() {}
     void stopMotionCalibrationScreen() {}
     void startRebootScreen() {}
@@ -183,6 +185,13 @@ class Screen : public concurrency::OSThread
         enqueueCmd(cmd);
     }
 
+    void startMagnetometerCalibrationScreen()
+    {
+        ScreenCmd cmd;
+        cmd.cmd = Cmd::START_MAGNETOMETER_CALIBRATION_SCREEN;
+        enqueueCmd(cmd);
+    }
+
     void startMotionCalibrationScreen()
     {
         ScreenCmd cmd;
@@ -207,6 +216,10 @@ class Screen : public concurrency::OSThread
     /// Stops showing the bluetooth PIN screen.
     void stopBluetoothPinScreen() { enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_BLUETOOTH_PIN_SCREEN}); }
 
+    /// Stops showing the magnetometer calibration.
+    void stopMagnetometerCalibrationScreen() {
+        enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_MAGNETOMETER_CALIBRATION_SCREEN});
+    }
     /// Stops showing the motion calibration.
     void stopMotionCalibrationScreen() {
         enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_MOTION_CALIBRATION_SCREEN});
@@ -367,6 +380,7 @@ class Screen : public concurrency::OSThread
     void handleShowNextFrame();
     void handleShowPrevFrame();
     void handleStartBluetoothPinScreen(uint32_t pin);
+    void handleMagnetometerCalibrationScreen();
     void handleMotionCalibrationScreen();
     void handlePrint(const char *text);
     void handleStartFirmwareUpdateScreen();
