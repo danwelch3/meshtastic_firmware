@@ -223,7 +223,11 @@ void MotionModule::updateData()
 
         // MotionModule::heading = mpu9250.getHeading();
         // LOG_DEBUG("MAG CENTER (%.1f, %.1f, %.1f)\n", mpu9250.mx_centre, mpu9250.my_centre, mpu9250.mz_centre);
-
+        
+        heading = 180 * atan2(mpu9250.my, mpu9250.mx) / PI + 180;
+        if (heading < 0) {
+            heading += 360;
+        }
     } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
         bno08x.update();
         MotionModule::heading = bno08x.getHeading();
@@ -232,18 +236,20 @@ void MotionModule::updateData()
 
 float MotionModule::getHeading()
 {
-    if (accelerometer_type == ScanI2C::DeviceType::BMX160) {
-        bmx160.update();
-        return bmx160.getHeading();
-    } else if (accelerometer_type == ScanI2C::DeviceType::MPU9250) {
-        // updateData();
-        return mpu9250.yaw;
-    } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
-        bno08x.update();
-        return bno08x.getHeading();
-    }
+    updateData();
+    return heading;
+    // if (accelerometer_type == ScanI2C::DeviceType::BMX160) {
+    //     bmx160.update();
+    //     return heading;
+    //     // return bmx160.getHeading();
+    // } else if (accelerometer_type == ScanI2C::DeviceType::MPU9250) {
+    //     // return mpu9250.yaw;
+    // } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
+    //     bno08x.update();
+    //     return bno08x.getHeading();
+    // }
 
-    return 0.0;
+    // return 0.0;
 }
 
 void MotionModule::calibrateMag()
