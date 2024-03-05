@@ -9,9 +9,10 @@ BNO08x::BNO08x(uint8_t address)
     devAddr = address;
 }
 
-void BNO08x::initialize(uint8_t address)
+void BNO08x::initialize(uint8_t address, TwoWire &wirePort)
 {
     devAddr = address;
+    _wire = &wirePort;
     initialize();
 }
 void BNO08x::initialize()
@@ -26,7 +27,17 @@ void BNO08x::initialize()
 
 uint8_t BNO08x::getDeviceID()
 {
-    I2Cdev::readByte(devAddr, SHTP_REPORT_PRODUCT_ID_REQUEST, buffer);
+    // Initialize the Tx buffer
+    _wire->beginTransmission(devAddr);
+    // Put slave register address in Tx buffer
+    _wire->write(SHTP_REPORT_PRODUCT_ID_REQUEST);
+    // Send the Tx buffer, but send a restart to keep connection alive
+    _wire->endTransmission(false);
+    // Read one byte from slave register address
+    _wire->requestFrom(devAddr, (uint8_t)1);
+    // Fill Rx buffer with result
+    buffer[0] = _wire->read();
+
     return buffer[0];
 }
 
@@ -50,8 +61,7 @@ void BNO08x::calibrateMag()
 
 void BNO08x::update()
 {
-    if (bno080.dataAvailable() == true)
-    {
+    if (bno080.dataAvailable() == true) {
         Mxyz[0] = bno080.getMagX();
         Mxyz[1] = bno080.getMagY();
         Mxyz[2] = bno080.getMagZ();

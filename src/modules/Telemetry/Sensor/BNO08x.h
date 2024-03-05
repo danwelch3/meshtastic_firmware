@@ -2,9 +2,9 @@
 #ifndef BNO080_H
 #define BNO080_H
 
-#include "../../I2Cdev.h"
 #include "BNO080/SparkFun_BNO080_Arduino_Library.h"
 #include <Arduino.h>
+#include <Wire.h>
 
 class BNO08x
 {
@@ -13,7 +13,7 @@ class BNO08x
     BNO08x(uint8_t address);
 
     void initialize();
-    void initialize(uint8_t address);
+    void initialize(uint8_t address, TwoWire &wirePort = Wire);
 
     uint8_t getDeviceID();
     bool testConnection();
@@ -32,9 +32,8 @@ class BNO08x
     int16_t gx, gy, gz;
     int16_t mx, my, mz;
 
-    // protected:
-    //     const char *BNO08xConfigFileName = "/prefs/BNO08x.dat";
-    //     uint8_t BNO08xState[BNO08x_MAX_STATE_BLOB_SIZE] = {0};
+  protected:
+    TwoWire *_wire; // Allows for use of various I2C ports
 
   private:
     uint8_t devAddr;

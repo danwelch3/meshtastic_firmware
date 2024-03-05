@@ -2,10 +2,9 @@
 #ifndef BMX160_H
 #define BMX160_H
 
-#include "../../I2Cdev.h"
 #include "BMX160/DFRobot_BMX160.h"
 #include <Arduino.h>
-// #include "FSCommon.h"
+#include <Wire.h>
 
 class BMX160
 {
@@ -14,7 +13,7 @@ class BMX160
     BMX160(uint8_t address);
 
     void initialize();
-    void initialize(uint8_t address);
+    void initialize(uint8_t address, TwoWire &wirePort = Wire);
 
     uint8_t getDeviceID();
     bool testConnection();
@@ -33,9 +32,8 @@ class BMX160
     int16_t gx, gy, gz;
     int16_t mx, my, mz;
 
-    // protected:
-    //     const char *bmx160ConfigFileName = "/prefs/bmx160.dat";
-    //     uint8_t bmx160State[BMX160_MAX_STATE_BLOB_SIZE] = {0};
+  protected:
+    TwoWire *_wire; // Allows for use of various I2C ports
 
   private:
     uint8_t devAddr;

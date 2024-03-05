@@ -10,7 +10,7 @@ BMX160::BMX160(uint8_t address)
     bmx160.setAddress(address);
 }
 
-void BMX160::initialize(uint8_t address)
+void BMX160::initialize(uint8_t address, TwoWire &wirePort)
 {
     devAddr = address;
     bmx160.setAddress(address);
@@ -25,7 +25,17 @@ void BMX160::initialize()
 
 uint8_t BMX160::getDeviceID()
 {
-    I2Cdev::readByte(devAddr, BMX160_CHIP_ID_ADDR, buffer);
+    // Initialize the Tx buffer
+    _wire->beginTransmission(devAddr);
+    // Put slave register address in Tx buffer
+    _wire->write(BMX160_CHIP_ID_ADDR);
+    // Send the Tx buffer, but send a restart to keep connection alive
+    _wire->endTransmission(false);
+    // Read one byte from slave register address
+    _wire->requestFrom(devAddr, (uint8_t)1);
+    // Fill Rx buffer with result
+    buffer[0] = _wire->read();
+
     return buffer[0];
 }
 
