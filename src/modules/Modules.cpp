@@ -18,6 +18,7 @@
 #include "modules/TextMessageModule.h"
 #include "modules/TraceRouteModule.h"
 #include "modules/WaypointModule.h"
+#include "modules/MotionModule.h"
 #if ARCH_PORTDUINO
 #include "input/LinuxInputImpl.h"
 #endif
@@ -132,6 +133,10 @@ void setupModules()
 #endif
         traceRouteModule = new TraceRouteModule();
     }
+    
+    motionModule = new MotionModule;
+    motionModule->init();
+    
     // NOTE! This module must be added LAST because it likes to check for replies from other modules and avoid sending extra
     // acks
     routingModule = new RoutingModule();

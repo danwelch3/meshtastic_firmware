@@ -117,6 +117,8 @@ void MotionModule::init()
         } else {
             LOG_DEBUG("BNO08x failed to initialize");
         }
+    } else {
+        LOG_DEBUG("Motion Module not initialized: %s\n", accelerometer_type);
     }
 }
 

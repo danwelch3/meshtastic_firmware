@@ -18,7 +18,7 @@ void BNO08x::initialize(uint8_t address, TwoWire &wirePort)
 void BNO08x::initialize()
 {
     if (bno080.begin(devAddr) == true) {
-        bno080.calibrateAll();
+        // bno080.calibrateAll();
         Serial.println("BNO init success");
     } else {
         Serial.println("BNO init failed");
