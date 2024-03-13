@@ -8,6 +8,7 @@
 #include <modules/Telemetry/Sensor/BNO08x.h>
 #endif
 #include <modules/Telemetry/Sensor/quaternionFilters.h>
+#include <modules/Telemetry/Sensor/Fusion/Fusion.h>
 
 #include "detect/ScanI2C.h"
 #include "detect/ScanI2CTwoWire.h"
@@ -77,6 +78,19 @@ class MotionModule
     float maxMag[3];
 
     float yaw_x, yaw_y, yaw_test;
+
+  private:
+    // Define calibration (replace with actual calibration data if available)
+    const FusionMatrix gyroscopeMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    const FusionVector gyroscopeSensitivity = {1.0f, 1.0f, 1.0f};
+    const FusionVector gyroscopeOffset = {0.0f, 0.0f, 0.0f};
+    const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
+    const FusionVector accelerometerOffset = {0.0f, 0.0f, 0.0f};
+    const FusionMatrix softIronMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    const FusionVector hardIronOffset = {0.0f, 0.0f, 0.0f};
+
+    #define SAMPLE_RATE (100)
 };
 
 extern MotionModule *motionModule;

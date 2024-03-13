@@ -2,7 +2,7 @@
 #ifndef BNO080_H
 #define BNO080_H
 
-#include "BNO080/SparkFun_BNO080_Arduino_Library.h"
+#include "BNO080/Adafruit_BNO08x.h"
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -12,8 +12,8 @@ class BNO08x
     BNO08x();
     BNO08x(uint8_t address);
 
-    void initialize();
-    void initialize(uint8_t address, TwoWire &wirePort = Wire);
+    bool initialize();
+    bool initialize(uint8_t address, TwoWire &wirePort = Wire);
 
     uint8_t getDeviceID();
     bool testConnection();
@@ -25,12 +25,8 @@ class BNO08x
 
     int16_t getTemperature();
 
-    // void loadCalibration();
-    // void saveCalibration();
-
-    int16_t ax, ay, az;
-    int16_t gx, gy, gz;
-    int16_t mx, my, mz;
+    // float Mxyz[3] = {0};
+    float heading = 0;
 
   protected:
     TwoWire *_wire; // Allows for use of various I2C ports
@@ -38,31 +34,15 @@ class BNO08x
   private:
     uint8_t devAddr;
     uint8_t buffer[14];
-    // uint8_t buffer_m[6];
-
-    float Axyz[3];
-    float Gxyz[3];
-    float Mxyz[3];
 
     float mx_centre;
     float my_centre;
     float mz_centre;
 
-    // Orange
-    // float mx_centre = 249.0;
-    // float my_centre = 229.0;
-    // float mz_centre = -280.0;
-
-    // volatile int mx_max = 0;
-    // volatile int my_max = 0;
-    // volatile int mz_max = 0;
-
-    // volatile int mx_min = 0;
-    // volatile int my_min = 0;
-    // volatile int mz_min = 0;
-
-    BNO080 bno080;
+    Adafruit_BNO08x  bno080;
     bool did_init = false;
+
+    sh2_SensorValue_t sensorValue;
 };
 
 #endif // BNO08x_H

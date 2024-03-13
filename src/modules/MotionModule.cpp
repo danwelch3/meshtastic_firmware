@@ -110,12 +110,19 @@ void MotionModule::init()
         }
     } else if (accelerometer_type == ScanI2C::DeviceType::BNO08x) {
         LOG_DEBUG("BNO08x initializing\n");
-        bno08x.initialize(use_accelerometer.address, Wire);
-        if (bno08x.testConnection()) {
+        // bno08x.initialize(use_accelerometer.address, Wire);
+        if (bno08x.initialize(use_accelerometer.address, Wire)) {
             hasCompass = true;
             LOG_DEBUG("BNO08x sucessfully initialized\n");
+
+            for( int i=0; i<500; i++) {
+                bno08x.update();
+                LOG_DEBUG("BNO08x HEADING=%.1f\n", bno08x.heading);
+                delay(500);
+            }
+
         } else {
-            LOG_DEBUG("BNO08x failed to initialize");
+            LOG_DEBUG("BNO08x failed to initialize\n");
         }
     } else {
         LOG_DEBUG("Motion Module not initialized: %s\n", accelerometer_type);
