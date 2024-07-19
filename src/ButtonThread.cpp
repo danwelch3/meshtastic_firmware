@@ -1,10 +1,12 @@
 #include "ButtonThread.h"
+#include "configuration.h"
+#if !MESHTASTIC_EXCLUDE_GPS
 #include "GPS.h"
+#endif
 #include "MeshService.h"
 #include "PowerFSM.h"
 #include "RadioLibInterface.h"
 #include "buzz.h"
-#include "graphics/Screen.h"
 #include "main.h"
 #include "modules/ExternalNotificationModule.h"
 #include "power.h"
@@ -145,29 +147,37 @@ int32_t ButtonThread::runOnce()
                 screen->print("Sent ad-hoc ping\n");
             break;
         }
-
+#if HAS_GPS
         case BUTTON_EVENT_MULTI_PRESSED: {
-            LOG_BUTTON("Multi press!\n");
-            OneButton *button = (OneButton *)oneButton;
-            int n = button->getNumberClicks();
-            LOG_DEBUG("multi press detected, count = %i\n", n);
+            // LOG_BUTTON("Multi press!\n");
+            // if (!config.device.disable_triple_click && (gps != nullptr)) {
+            //     gps->toggleGpsMode();
+            //     if (screen)
+            //         screen->forceDisplay();
+            // }
+            // break;
+
+            // OneButton *button = (OneButton *)oneButton;
+            int n = userButton.getNumberClicks();
+            LOG_BUTTON("multi press detected, count = %i\n", n);
             if (n == 3) {
                 if (!config.device.disable_triple_click && (gps != nullptr)) {
                     gps->toggleGpsMode();
-                    if (screen)
+                    if (screen) {
                         screen->forceDisplay();
+                    }
                 }
-                // if (!config.device.disable_triple_click && (gps != nullptr)) {
-                //     config.position.gps_enabled = !(config.position.gps_enabled);
-                //     if (config.position.gps_enabled) {
-                //         LOG_DEBUG("Flag set to true to restore power\n");
-                //         gps->enable();
+                if (!config.device.disable_triple_click && (gps != nullptr)) {
+                    config.position.gps_enabled = !(config.position.gps_enabled);
+                    if (config.position.gps_enabled) {
+                        LOG_DEBUG("Flag set to true to restore power\n");
+                        gps->enable();
 
-                //     } else {
-                //         LOG_DEBUG("Flag set to false for gps power\n");
-                //         gps->disable();
-                //     }
-                // }
+                    } else {
+                        LOG_DEBUG("Flag set to false for gps power\n");
+                        gps->disable();
+                    }
+                }
             } else if (n == 5) {
                 LOG_DEBUG("start magnetometer calibration\n");
                 screen->startMagnetometerCalibrationScreen();
@@ -175,9 +185,10 @@ int32_t ButtonThread::runOnce()
                 LOG_DEBUG("start motion calibration\n");
                 screen->startMotionCalibrationScreen();
             }
+
             break;
         }
-
+#endif
         case BUTTON_EVENT_LONG_PRESSED: {
             LOG_BUTTON("Long press!\n");
             powerFSM.trigger(EVENT_PRESS);
@@ -239,3 +250,33 @@ void ButtonThread::userButtonPressedLongStop()
         btnEvent = BUTTON_EVENT_LONG_RELEASED;
     }
 }
+
+// void ButtonThread::userButtonMultiPressed(void *oneButton)
+// {
+//     OneButton *button = (OneButton *)oneButton;
+//     int n = button->getNumberClicks();
+//     LOG_DEBUG("multi press detected, count = %i\n", n);
+//     if (n == 3) {
+//         if (!config.device.disable_triple_click && (gps != nullptr)) {
+//             gps->toggleGpsMode();
+//             screen->forceDisplay();
+//         }
+//         if (!config.device.disable_triple_click && (gps != nullptr)) {
+//             config.position.gps_enabled = !(config.position.gps_enabled);
+//             if (config.position.gps_enabled) {
+//                 LOG_DEBUG("Flag set to true to restore power\n");
+//                 gps->enable();
+
+//             } else {
+//                 LOG_DEBUG("Flag set to false for gps power\n");
+//                 gps->disable();
+//             }
+//         }
+//     } else if (n == 5) {
+//         LOG_DEBUG("start magnetometer calibration\n");
+//         screen->startMagnetometerCalibrationScreen();
+//     } else if (n == 6) {
+//         LOG_DEBUG("start motion calibration\n");
+//         screen->startMotionCalibrationScreen();
+//     }
+// }

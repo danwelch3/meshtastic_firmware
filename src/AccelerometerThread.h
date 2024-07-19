@@ -21,12 +21,16 @@
 #include <SensorBMA423.hpp>
 #include <Wire.h>
 
+#define ACCELEROMETER_CHECK_INTERVAL_MS 100
+#define ACCELEROMETER_CLICK_THRESHOLD 40
+
+
+uint16_t readRegister(uint8_t address, uint8_t reg, uint8_t *data, uint16_t len)
 SensorBMA423 bmaSensor;
 bool BMA_IRQ = false;
 
 #define ACCELEROMETER_CHECK_INTERVAL_MS 100
 #define ACCELEROMETER_CLICK_THRESHOLD 40
-
 
 uint16_t readRegister(uint8_t address, uint8_t reg, uint8_t *data, uint16_t len)
 {
