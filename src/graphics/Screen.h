@@ -51,6 +51,7 @@ class Screen
 #endif
 
 #include "EInkDisplay2.h"
+#include "EInkDynamicDisplay.h"
 #include "TFTDisplay.h"
 #include "TypedQueue.h"
 #include "commands.h"
@@ -127,6 +128,8 @@ class Screen : public concurrency::OSThread
 
   public:
     explicit Screen(ScanI2C::DeviceAddress, meshtastic_Config_DisplayConfig_OledType, OLEDDISPLAY_GEOMETRY);
+
+    ~Screen();
 
     Screen(const Screen &) = delete;
     Screen &operator=(const Screen &) = delete;

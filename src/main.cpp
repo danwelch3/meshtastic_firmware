@@ -33,7 +33,9 @@
 // #include <driver/rtc_io.h>
 
 #ifdef ARCH_ESP32
+#if !MESHTASTIC_EXCLUDE_WEBSERVER
 #include "mesh/http/WebServer.h"
+#endif
 #include "nimble/NimbleBluetooth.h"
 NimbleBluetooth *nimbleBluetooth;
 #endif
@@ -68,6 +70,7 @@ NRF52Bluetooth *nrf52Bluetooth;
 
 #ifdef ARCH_PORTDUINO
 #include "linux/LinuxHardwareI2C.h"
+#include "mesh/raspihttp/PiWebServer.h"
 #include "platform/portduino/PortduinoGlue.h"
 #include <fstream>
 #include <iostream>
@@ -159,25 +162,6 @@ const char *getDeviceName()
     return name;
 }
 
-#ifdef VEXT_ENABLE_V03
-
-#include <soc/rtc.h>
-
-static uint32_t calibrate_one(rtc_cal_sel_t cal_clk, const char *name)
-{
-    const uint32_t cal_count = 1000;
-    uint32_t cali_val;
-    for (int i = 0; i < 5; ++i) {
-        cali_val = rtc_clk_cal(cal_clk, cal_count);
-    }
-    return cali_val;
-}
-
-int heltec_version = 3;
-
-#define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
-#endif
-
 static int32_t ledBlinker()
 {
     static bool ledOn;
@@ -191,15 +175,10 @@ static int32_t ledBlinker()
 
 uint32_t timeLastPowered = 0;
 
-#if HAS_BUTTON || defined(ARCH_PORTDUINO)
-bool ButtonThread::shutdown_on_long_stop = false;
-#endif
-
 static Periodic *ledPeriodic;
 static OSThread *powerFSMthread;
 #if HAS_BUTTON || defined(ARCH_PORTDUINO)
 static OSThread *buttonThread;
-uint32_t ButtonThread::longPressTime = 0;
 #endif
 static AccelerometerThread *accelerometerThread;
 static OSThread *ambientLightingThread;
@@ -242,10 +221,11 @@ void setup()
 
     initDeepSleep();
 
-    // Testing this fix für erratic T-Echo boot behaviour
-#if defined(TTGO_T_ECHO) && defined(PIN_EINK_PWR_ON)
-    pinMode(PIN_EINK_PWR_ON, OUTPUT);
-    digitalWrite(PIN_EINK_PWR_ON, HIGH);
+    // power on peripherals
+#if defined(TTGO_T_ECHO) && defined(PIN_POWER_EN)
+    pinMode(PIN_POWER_EN, OUTPUT);
+    digitalWrite(PIN_POWER_EN, HIGH);
+    // digitalWrite(PIN_POWER_EN1, INPUT);
 #endif
 
 #if defined(LORA_TCXO_GPIO)
@@ -253,56 +233,31 @@ void setup()
     digitalWrite(LORA_TCXO_GPIO, HIGH);
 #endif
 
-#ifdef ST7735_BL_V03 // Heltec Wireless Tracker PCB Change Detect/Hack
-
-    rtc_clk_32k_enable(true);
-    CALIBRATE_ONE(RTC_CAL_RTC_MUX);
-    if (CALIBRATE_ONE(RTC_CAL_32K_XTAL) != 0) {
-        rtc_clk_slow_freq_set(RTC_SLOW_FREQ_32K_XTAL);
-        CALIBRATE_ONE(RTC_CAL_RTC_MUX);
-        CALIBRATE_ONE(RTC_CAL_32K_XTAL);
-    }
-
-    if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
-        heltec_version = 3;
-    } else {
-        heltec_version = 5;
-    }
-#endif
-
 #if defined(VEXT_ENABLE_V03)
-    if (heltec_version == 3) {
-        pinMode(VEXT_ENABLE_V03, OUTPUT);
-        digitalWrite(VEXT_ENABLE_V03, 0); // turn on the display power
-        LOG_DEBUG("HELTEC Detect Tracker V1.0\n");
-    } else {
-        pinMode(VEXT_ENABLE_V05, OUTPUT);
-        digitalWrite(VEXT_ENABLE_V05, 1); // turn on the display power
-        LOG_DEBUG("HELTEC Detect Tracker V1.1\n");
-    }
+    pinMode(VEXT_ENABLE_V03, OUTPUT);
+    pinMode(ST7735_BL_V03, OUTPUT);
+    digitalWrite(VEXT_ENABLE_V03, 0); // turn on the display power and antenna boost
+    digitalWrite(ST7735_BL_V03, 1);   // display backligth on
+    LOG_DEBUG("HELTEC Detect Tracker V1.0\n");
+#elif defined(VEXT_ENABLE_V05)
+    pinMode(VEXT_ENABLE_V05, OUTPUT);
+    pinMode(ST7735_BL_V05, OUTPUT);
+    digitalWrite(VEXT_ENABLE_V05, 1); // turn on the lora antenna boost
+    digitalWrite(ST7735_BL_V05, 1);   // turn on display backligth
+    LOG_DEBUG("HELTEC Detect Tracker V1.1\n");
 #elif defined(VEXT_ENABLE)
     pinMode(VEXT_ENABLE, OUTPUT);
     digitalWrite(VEXT_ENABLE, 0); // turn on the display power
 #endif
 
 #if defined(VGNSS_CTRL_V03)
-    if (heltec_version == 3) {
-        pinMode(VGNSS_CTRL_V03, OUTPUT);
-        digitalWrite(VGNSS_CTRL_V03, LOW);
-    } else {
-        pinMode(VGNSS_CTRL_V05, OUTPUT);
-        digitalWrite(VGNSS_CTRL_V05, LOW);
-    }
+    pinMode(VGNSS_CTRL_V03, OUTPUT);
+    digitalWrite(VGNSS_CTRL_V03, LOW);
 #endif
 
 #if defined(VTFT_CTRL_V03)
-    if (heltec_version == 3) {
-        pinMode(VTFT_CTRL_V03, OUTPUT);
-        digitalWrite(VTFT_CTRL_V03, LOW);
-    } else {
-        pinMode(VTFT_CTRL_V05, OUTPUT);
-        digitalWrite(VTFT_CTRL_V05, LOW);
-    }
+    pinMode(VTFT_CTRL_V03, OUTPUT);
+    digitalWrite(VTFT_CTRL_V03, LOW);
 #endif
 
 #if defined(VGNSS_CTRL)
@@ -394,7 +349,7 @@ void setup()
     pinMode(PIN_3V3_EN, OUTPUT);
     digitalWrite(PIN_3V3_EN, HIGH);
 #endif
-#ifndef USE_EINK
+#ifdef AQ_SET_PIN
     // RAK-12039 set pin for Air quality sensor
     pinMode(AQ_SET_PIN, OUTPUT);
     digitalWrite(AQ_SET_PIN, HIGH);
@@ -553,6 +508,7 @@ void setup()
     SCANNER_TO_SENSORS_MAP(ScanI2C::DeviceType::BME_680, meshtastic_TelemetrySensorType_BME680)
     SCANNER_TO_SENSORS_MAP(ScanI2C::DeviceType::BME_280, meshtastic_TelemetrySensorType_BME280)
     SCANNER_TO_SENSORS_MAP(ScanI2C::DeviceType::BMP_280, meshtastic_TelemetrySensorType_BMP280)
+    SCANNER_TO_SENSORS_MAP(ScanI2C::DeviceType::BMP_085, meshtastic_TelemetrySensorType_BMP085)
     SCANNER_TO_SENSORS_MAP(ScanI2C::DeviceType::INA260, meshtastic_TelemetrySensorType_INA260)
     SCANNER_TO_SENSORS_MAP(ScanI2C::DeviceType::INA219, meshtastic_TelemetrySensorType_INA219)
     SCANNER_TO_SENSORS_MAP(ScanI2C::DeviceType::INA3221, meshtastic_TelemetrySensorType_INA3221)
@@ -600,7 +556,7 @@ void setup()
 
     // We do this as early as possible because this loads preferences from flash
     // but we need to do this after main cpu init (esp32setup), because we need the random seed set
-    nodeDB.init();
+    nodeDB = new NodeDB;
 
     // If we're taking on the repeater role, use flood router and turn off 3V3_S rail because peripherals are not needed
     if (config.device.role == meshtastic_Config_DeviceConfig_Role_REPEATER) {
@@ -675,7 +631,7 @@ void setup()
 #else
     // ESP32
     SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
-    LOG_WARN("SPI.begin(SCK=%d, MISO=%d, MOSI=%d, NSS=%d)\n", LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
+    LOG_DEBUG("SPI.begin(SCK=%d, MISO=%d, MOSI=%d, NSS=%d)\n", LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
     SPI.setFrequency(4000000);
 #endif
 
@@ -694,7 +650,7 @@ void setup()
     } else {
         LOG_DEBUG("Running without GPS.\n");
     }
-    nodeStatus->observe(&nodeDB.newStatus);
+    nodeStatus->observe(&nodeDB->newStatus);
 
 #ifdef HAS_I2S
     LOG_DEBUG("Starting audio thread\n");
@@ -731,6 +687,11 @@ void setup()
     // make analog PA vs not PA switch on SX126x eval board work properly
     pinMode(SX126X_ANT_SW, OUTPUT);
     digitalWrite(SX126X_ANT_SW, 1);
+#endif
+
+#ifdef PIN_PWR_DELAY_MS
+    // This may be required to give the peripherals time to power up.
+    delay(PIN_PWR_DELAY_MS);
 #endif
 
 #ifdef ARCH_PORTDUINO
@@ -883,7 +844,7 @@ void setup()
     if ((config.lora.region == meshtastic_Config_LoRaConfig_RegionCode_LORA_24) && (!rIf->wideLora())) {
         LOG_WARN("Radio chip does not support 2.4GHz LoRa. Reverting to unset.\n");
         config.lora.region = meshtastic_Config_LoRaConfig_RegionCode_UNSET;
-        nodeDB.saveToDisk(SEGMENT_CONFIG);
+        nodeDB->saveToDisk(SEGMENT_CONFIG);
         if (!rIf->reconfigure()) {
             LOG_WARN("Reconfigure failed, rebooting\n");
             screen->startRebootScreen();
@@ -905,12 +866,17 @@ void setup()
 #endif
 #endif
 
-#ifdef ARCH_ESP32
+#if defined(ARCH_ESP32) && !MESHTASTIC_EXCLUDE_WEBSERVER
     // Start web server thread.
     webServerThread = new WebServerThread();
 #endif
 
 #ifdef ARCH_PORTDUINO
+#if __has_include(<ulfius.h>)
+    if (settingsMap[webserverport] != -1) {
+        piwebServerThread = new PiWebServerThread();
+    }
+#endif
     initApiServer(TCPPort);
 #endif
 
